@@ -27,9 +27,6 @@ int main() {
     printf("Write the symbol to be used as border: ");
     int border = getchar();
 
-    printf("the number is: %d\n", number);
-    printf("the char to be used is: %c\n", border);
-
     printBox(string, number, border);
 
     free(string);
