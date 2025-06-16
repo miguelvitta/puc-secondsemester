@@ -6,6 +6,7 @@
 
 #define MAX_NAME 256
 #define TABLE_SIZE 100
+#define DELETED_NODE (person*)(0xFFFFFFFFFFFFFFFFUL)
 
 typedef struct {
     char name[MAX_NAME];
@@ -85,16 +86,14 @@ int main() {
     person* tmp = hashTableLookup("Mpho");
     if (tmp == NULL) {
         printf("Not found!\n");
-    }
-    else {
+    } else {
         printf("%s was found!\n", tmp->name);
     }
 
     tmp = hashTableLookup("Miguel");
     if (tmp == NULL) {
         printf("Not found!\n");
-    }
-    else {
+    } else {
         printf("%s was found!\n", tmp->name);
     }
 
@@ -102,12 +101,10 @@ int main() {
     tmp = hashTableLookup("Michael");
     if (tmp == NULL) {
         printf("Not found!\n");
-    }
-    else {
+    } else {
         printf("%s was found!\n", tmp->name);
     }
     printTable();
-    
 
     return 0;
 }
@@ -124,7 +121,10 @@ void printTable() {
     for (int i = 0; i < TABLE_SIZE; i++) {
         if (hashTable[i] == NULL) {
             printf("\t%i\t---\n", i);
-        } else {
+        } else if (hashTable[i] == DELETED_NODE) {
+            printf("\t%i\t---<deleted>\n", i);
+        }
+        else {
             printf("\t%i\t%s\n", i, hashTable[i]->name);
         }
     }
@@ -136,37 +136,50 @@ bool hashTableInsert(person* p) {
         return false;
     }
     unsigned int index = hash(p->name);
-    if (hashTable[index] != NULL) {
-        fprintf(stderr,
-                "A collision happened at index %d with name \"%s\" (already "
-                "occupied by \"%s\")\n",
-                index, p->name, hashTable[index]->name);
-        return false;
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        int try = (i + index) % TABLE_SIZE;
+        if (hashTable[try] == NULL || hashTable[try] == DELETED_NODE) {
+            hashTable[try] = p;
+            return true;
+        }
     }
-    hashTable[index] = p;
-    return true;
+    return false;
 }
 
 person* hashTableLookup(char* name) {
     int index = hash(name);
-    if (hashTable[index] != NULL && strncmp(hashTable[index]->name, name, TABLE_SIZE) == 0) {
-        return hashTable[index];
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        int try = (index + i) % TABLE_SIZE;
+        if (hashTable[try] == NULL) {
+            return false;
+        }
+        if (hashTable[try] == DELETED_NODE) {
+            continue;
+        }
+        if (strncmp(hashTable[try]->name, name, TABLE_SIZE) == 0) {
+            return hashTable[try];
+        }
     }
-    else {
-        return NULL;
-    }
+    return NULL;
 }
 
 person* hashTableDelete(char* name) {
     int index = hash(name);
-    if (hashTable[index] != NULL && strncmp(hashTable[index]->name, name, TABLE_SIZE) == 0) {
-        person* tmp = hashTable[index];
-        hashTable[index] = NULL;
-        return tmp;
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        int try = (index + i) % TABLE_SIZE;
+        if (hashTable[try] == NULL) {
+            return NULL;
+        }
+        if (hashTable[try] == DELETED_NODE) {
+            continue;
+        }
+        if (strncmp(hashTable[try]->name, name, TABLE_SIZE) == 0) {
+            person* tmp = hashTable[try];
+            hashTable[try] = DELETED_NODE;
+            return tmp;
+        }
     }
-    else {
-        return NULL;
-    }
+    return NULL;
 }
 
 unsigned int hash(char* name) {
