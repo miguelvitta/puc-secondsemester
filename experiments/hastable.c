@@ -5,7 +5,7 @@
 #include <string.h>
 
 #define MAX_NAME 256
-#define TABLE_SIZE 320
+#define TABLE_SIZE 100
 
 typedef struct {
     char name[MAX_NAME];
@@ -17,6 +17,8 @@ person* hashTable[TABLE_SIZE];
 bool initHashTable();
 void printTable();
 bool hashTableInsert(person* p);
+person* hashTableLookup(char* name);
+person* hashTableDelete(char* name);
 unsigned int hash(char* name);
 
 int main() {
@@ -79,6 +81,34 @@ int main() {
     hashTableInsert(&gabriel);
 
     printTable();
+
+    person* tmp = hashTableLookup("Mpho");
+    if (tmp == NULL) {
+        printf("Not found!\n");
+    }
+    else {
+        printf("%s was found!\n", tmp->name);
+    }
+
+    tmp = hashTableLookup("Miguel");
+    if (tmp == NULL) {
+        printf("Not found!\n");
+    }
+    else {
+        printf("%s was found!\n", tmp->name);
+    }
+
+    hashTableDelete("Michael");
+    tmp = hashTableLookup("Michael");
+    if (tmp == NULL) {
+        printf("Not found!\n");
+    }
+    else {
+        printf("%s was found!\n", tmp->name);
+    }
+    printTable();
+    
+
     return 0;
 }
 
@@ -90,6 +120,7 @@ bool initHashTable() {
 }
 
 void printTable() {
+    printf("Start:\n");
     for (int i = 0; i < TABLE_SIZE; i++) {
         if (hashTable[i] == NULL) {
             printf("\t%i\t---\n", i);
@@ -97,26 +128,52 @@ void printTable() {
             printf("\t%i\t%s\n", i, hashTable[i]->name);
         }
     }
+    printf("End:\n");
 }
 
 bool hashTableInsert(person* p) {
     if (p == NULL) {
         return false;
     }
-    int index = hash(p->name);
+    unsigned int index = hash(p->name);
     if (hashTable[index] != NULL) {
-        fprintf(stderr, "A collision happened at index %d with name \"%s\" (already occupied by \"%s\")\n", index, p->name, hashTable[index]->name);
+        fprintf(stderr,
+                "A collision happened at index %d with name \"%s\" (already "
+                "occupied by \"%s\")\n",
+                index, p->name, hashTable[index]->name);
         return false;
     }
     hashTable[index] = p;
     return true;
 }
 
+person* hashTableLookup(char* name) {
+    int index = hash(name);
+    if (hashTable[index] != NULL && strncmp(hashTable[index]->name, name, TABLE_SIZE) == 0) {
+        return hashTable[index];
+    }
+    else {
+        return NULL;
+    }
+}
+
+person* hashTableDelete(char* name) {
+    int index = hash(name);
+    if (hashTable[index] != NULL && strncmp(hashTable[index]->name, name, TABLE_SIZE) == 0) {
+        person* tmp = hashTable[index];
+        hashTable[index] = NULL;
+        return tmp;
+    }
+    else {
+        return NULL;
+    }
+}
+
 unsigned int hash(char* name) {
-    int len = strnlen(name, MAX_NAME);
+    size_t len = strnlen(name, MAX_NAME);
     unsigned int hashValue = 0;
 
-    for (int i = 0; i < len; i++) {
+    for (size_t i = 0; i < len; i++) {
         hashValue += name[i];
         hashValue = (hashValue * name[i]) % TABLE_SIZE;
     }
